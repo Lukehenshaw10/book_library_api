@@ -1,0 +1,1 @@
+A Book Library express app which uses Sequelize to interact with a MySQL database. User's can create account which checks validity of password and email, then search for books all using the express api and MySQL as the database.
