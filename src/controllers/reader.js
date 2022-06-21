@@ -14,7 +14,7 @@ exports.create = async (req, res) => {
 //Finds all readers 
 exports.read = async (req, res) => {
     const readersAll = await Reader.findAll();
-    
+    //const readers = await Reader.findAll({where: req.query});
     try {
         res.status(200).json(readersAll);
     } catch (err) {
@@ -25,16 +25,31 @@ exports.read = async (req, res) => {
 //Finds a specific reader from their id number 
 
 exports.readById = async (req, res) => {
-    const { id } = req.params.id;
-    const reader = await Reader.findByPK(id);
-    
+
     try { 
+        const { id } = req.params;
+        const reader = await Reader.findByPk(id);
     if (!reader) {
-        res.sendStatus(404).json({ error: "Unable to find reader"});
+        res.status(404).json({ error: 'The reader could not be found.' });
     } else {
         res.status(200).json(reader);
     }
-    }   catch (err) {
+    } catch (err) {
+        res.status(500).json(err);
+    }
+};
+
+exports.update = async (req, res) => {
+    try { 
+        const { readerId } = req.params;
+        const updateData = req.body;
+        const [ updatedRows ] = await Reader.update(updateData, { where: {readerId} });
+    if(!updatedRows) {
+        res.status(404).json({error: "The reader could not be found" });
+    } else {
+        res.status(200).send();
+    }
+    } catch (err) {
         res.status(500).json(err);
     }
 };
