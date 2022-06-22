@@ -1,4 +1,3 @@
-// tests/reader.test.js
 const { expect } = require('chai');
 const request = require('supertest');
 const { Reader } = require('../src/models');
@@ -103,7 +102,7 @@ describe('/readers', () => {
     });
 
     describe('DELETE /readers/:id', () => {
-      it.only('deletes reader record by id', async () => {
+      it('deletes reader record by id', async () => {
         const reader = readers[0];
         const response = await request(app).delete(`/readers/${reader.id}`);
         const deletedReader = await Reader.findByPk(reader.id, { raw: true });
@@ -112,7 +111,7 @@ describe('/readers', () => {
         expect(deletedReader).to.equal(null);
       });
 
-      it.only('returns a 404 if the reader does not exist', async () => {
+      it('returns a 404 if the reader does not exist', async () => {
         const response = await request(app).delete('/readers/12345');
         expect(response.status).to.equal(404);
         expect(response.body.error).to.equal('The reader could not be found.');
