@@ -1,21 +1,24 @@
 const { Reader } = require('../models');
 
 // creates a new reader to the DB
-exports.create = async (req, res) => {
-    const newReader = await Reader.create(req.body);
-    
+exports.create = async (req, res) => {    
     try {
+        const newReader = await Reader.create(req.body);
         res.status(201).json(newReader);
     } catch (err) {
-        res.status(500).json(err);
+        if (err.errors[0].type === 'Validation error' || 'notNull Violation') {
+            res.status(400).json(err.message);
+          }
+          else { 
+            res.status(500).json(error) };
     }
 };
 
 //Finds all readers 
 exports.read = async (req, res) => {
-    const readersAll = await Reader.findAll();
     //const readers = await Reader.findAll({where: req.query});
     try {
+        const readersAll = await Reader.findAll();
         res.status(200).json(readersAll);
     } catch (err) {
         res.status(500).json(err);

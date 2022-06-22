@@ -1,8 +1,16 @@
 const { Book } = require('../models');
 
 exports.create = async (req, res) => {
-  const newBook = await Book.create(req.body);
-  res.status(201).json(newBook);
+    try {
+        const newBook = await Book.create(req.body);
+        res.status(201).json(newBook);
+    } catch (err) {
+        if (err.errors[0].type === 'Validation error' || 'notNull Violation') {
+            res.status(400).json(err.message);
+          }
+          else { 
+            res.status(500).json(error) };
+    }
 };
 
 exports.findAll = async (req, res) => {

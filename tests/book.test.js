@@ -31,6 +31,22 @@ describe('/books', () => {
         expect(newBookRecord.genre).to.equal('Sci-Fi');
         expect(newBookRecord.ISBN).to.equal('234254543');
       });
+      it('doesnt allow a IBSN less than 4 characters', async () => {
+        const response = await (await request(app).post('/books').send({
+          title: 'The Drifters',
+          author: 'James Michener',
+          genre: 'Fiction',
+          ISBN: '123'
+        }));
+        const newBookRecord = await Book.findByPk(response.body.id, {
+          raw: true,
+
+        });
+
+        expect(response.status).to.equal(400);
+        expect(response.body).to.equal('Validation error: ISBN must be at least 4 characters');
+      });
+
     });
   });
 
