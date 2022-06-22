@@ -6,47 +6,37 @@ const app = require('../src/app');
 describe('/books', () => {
   before(async () => Book.sequelize.sync());
 
-  beforeEach(async () => {
-    await Book.destroy({ where: {} });
-  });
-
   describe('with no records in the database', () => {
     describe('POST /books', () => {
       it('creates a new book in the database', async () => {
         const response = await request(app).post('/books').send({
-          title: "Dune",
-          author: "Frank Herbert",
-          genre: "Sci-Fi",
-          ISBN: "234254543",
+          title: 'Lord of the Rings',
+          author: 'J.R.R. Tolkien',
+          ISBN: '1-2-3-4-5-6',
         });
-
         const newBookRecord = await Book.findByPk(response.body.id, {
           raw: true,
         });
 
         expect(response.status).to.equal(201);
-        expect(response.body.title).to.equal('Dune');
-        expect(newBookRecord.title).to.equal('Dune');
-        expect(newBookRecord.author).to.equal('Frank Herbert');
-        expect(newBookRecord.genre).to.equal('Sci-Fi');
-        expect(newBookRecord.ISBN).to.equal('234254543');
+        expect(response.body.title).to.equal('Lord of the Rings');
+        expect(response.body.author).to.equal('J.R.R. Tolkien');
+        expect(response.body.ISBN).to.equal('1-2-3-4-5-6');
+        expect(newBookRecord.title).to.equal('Lord of the Rings');
+        expect(newBookRecord.author).to.equal('J.R.R. Tolkien');
+        expect(newBookRecord.ISBN).to.equal('1-2-3-4-5-6');
       });
-      it('doesnt allow a IBSN less than 4 characters', async () => {
-        const response = await (await request(app).post('/books').send({
-          title: 'The Drifters',
-          author: 'James Michener',
-          genre: 'Fiction',
-          ISBN: '123'
-        }));
+
+      it('cannot create a book if there is no author or title', async () => {
+        const response = await request(app).post('/books').send({});
         const newBookRecord = await Book.findByPk(response.body.id, {
           raw: true,
-
         });
 
         expect(response.status).to.equal(400);
-        expect(response.body).to.equal('Validation error: ISBN must be at least 4 characters');
+        expect(response.body.errors.length).to.equal(2);
+        expect(newBookRecord).to.equal(null);
       });
-
     });
   });
 
@@ -54,20 +44,23 @@ describe('/books', () => {
     let books;
 
     beforeEach(async () => {
+      await Book.destroy({ where: {} });
+
       books = await Promise.all([
         Book.create({
-            title: "Dune",
-            author: "Frank Herbert",
-            genre: "Sci-Fi",
-            ISBN: "234254543",
+          title: 'The Highrise',
+          author: 'J.G. Ballard',
         }),
-        Book.create({ title: "Papillon", author: "Henri Charriere", genre: "Adventure", ISBN: "454678776" }),
-        Book.create({ title: "The Hobbit", author: "J.R.R Tolkein", genre: "Fantasy", ISBN: "3445774" }),
+        Book.create({
+          title: 'The Catcher In The Rye',
+          author: 'J.D. Salinger',
+        }),
+        Book.create({ title: 'Brave New World', author: 'Aldous Huxley' }),
       ]);
     });
 
     describe('GET /books', () => {
-      it('gets all book records', async () => {
+      it('gets all books records', async () => {
         const response = await request(app).get('/books');
 
         expect(response.status).to.equal(200);
@@ -78,22 +71,18 @@ describe('/books', () => {
 
           expect(book.title).to.equal(expected.title);
           expect(book.author).to.equal(expected.author);
-          expect(book.genre).to.equal(expected.genre);
-          expect(book.ISBN).to.equal(expected.ISBN);
         });
       });
     });
 
     describe('GET /books/:id', () => {
-      it('gets book record by id', async () => {
+      it('gets books record by id', async () => {
         const book = books[0];
         const response = await request(app).get(`/books/${book.id}`);
 
         expect(response.status).to.equal(200);
         expect(response.body.title).to.equal(book.title);
         expect(response.body.author).to.equal(book.author);
-        expect(response.body.genre).to.equal(book.genre);
-        expect(response.body.ISBN).to.equal(book.ISBN);
       });
 
       it('returns a 404 if the book does not exist', async () => {
@@ -105,23 +94,23 @@ describe('/books', () => {
     });
 
     describe('PATCH /books/:id', () => {
-      it('updates book details by id', async () => {
+      it('updates books details by id', async () => {
         const book = books[0];
         const response = await request(app)
           .patch(`/books/${book.id}`)
-          .send({ ISBN: '43534343' });
+          .send({ author: 'Some author' });
         const updatedBookRecord = await Book.findByPk(book.id, {
           raw: true,
         });
 
         expect(response.status).to.equal(200);
-        expect(updatedBookRecord.ISBN).to.equal('43534343');
+        expect(updatedBookRecord.author).to.equal('Some author');
       });
 
       it('returns a 404 if the book does not exist', async () => {
         const response = await request(app)
           .patch('/books/12345')
-          .send({ ISBN: '43534343' });
+          .send({ genre: 'British Fantasy Classic' });
 
         expect(response.status).to.equal(404);
         expect(response.body.error).to.equal('The book could not be found.');
@@ -129,7 +118,7 @@ describe('/books', () => {
     });
 
     describe('DELETE /books/:id', () => {
-      it('deletes book record by id', async () => {
+      it('deletes a book record by id', async () => {
         const book = books[0];
         const response = await request(app).delete(`/books/${book.id}`);
         const deletedBook = await Book.findByPk(book.id, { raw: true });

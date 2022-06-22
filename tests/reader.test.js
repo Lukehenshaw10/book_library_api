@@ -6,17 +6,13 @@ const app = require('../src/app');
 describe('/readers', () => {
   before(async () => Reader.sequelize.sync());
 
-  beforeEach(async () => {
-    await Reader.destroy({ where: {} });
-  });
-
   describe('with no records in the database', () => {
     describe('POST /readers', () => {
       it('creates a new reader in the database', async () => {
         const response = await request(app).post('/readers').send({
           name: 'Elizabeth Bennet',
           email: 'future_ms_darcy@gmail.com',
-          password: '123456789'
+          password: 'iamabadpassword',
         });
         const newReaderRecord = await Reader.findByPk(response.body.id, {
           raw: true,
@@ -24,38 +20,53 @@ describe('/readers', () => {
 
         expect(response.status).to.equal(201);
         expect(response.body.name).to.equal('Elizabeth Bennet');
+        expect(response.body.email).to.equal('future_ms_darcy@gmail.com');
+        expect(response.body.password).to.equal(undefined);
+
         expect(newReaderRecord.name).to.equal('Elizabeth Bennet');
         expect(newReaderRecord.email).to.equal('future_ms_darcy@gmail.com');
+        expect(newReaderRecord.password).to.equal('iamabadpassword');
       });
 
-      it('Checks for invalid email address', async () => {
-        const response = await (await request(app).post('/readers').send({
-          name: 'Luke Henshaw',
-          email: 'lukeyhenshaw.gmail,com',
-          password: 'password123'
-        }));
+      it('errors if an email or password are in the wrong format', async () => {
+        const response = await request(app).post('/readers').send({
+          name: 'Elizabeth Bennet',
+          email: 'future_ms_darcygmail.com',
+          password: '123',
+        });
         const newReaderRecord = await Reader.findByPk(response.body.id, {
           raw: true,
-
         });
 
         expect(response.status).to.equal(400);
-        expect(response.body).to.equal('Validation error: Invalid Email address');
+        expect(response.body.errors.length).to.equal(2);
+        expect(newReaderRecord).to.equal(null);
       });
 
-      it('Checks password is greater than 8 characters ', async () => {
-        const response = await (await request(app).post('/readers').send({
-          name: 'Luke Henshaw',
-          email: 'lukeyhenshaw@gmail.com',
-          password: 'pass'
-        }));
+      it('errors if any of the fields are missing', async () => {
+        const response = await request(app).post('/readers').send({});
         const newReaderRecord = await Reader.findByPk(response.body.id, {
           raw: true,
-
         });
 
         expect(response.status).to.equal(400);
-        expect(response.body).to.equal('Validation error: Password needs to be at least 8 characters');
+        expect(response.body.errors.length).to.equal(3);
+        expect(newReaderRecord).to.equal(null);
+      });
+
+      it('errors if name is an empty string', async () => {
+        const response = await request(app).post('/readers').send({
+          name: '',
+          password: '12345667895678',
+          email: 'email@domain.com',
+        });
+        const newReaderRecord = await Reader.findByPk(response.body.id, {
+          raw: true,
+        });
+
+        expect(response.status).to.equal(400);
+        expect(response.body.errors.length).to.equal(1);
+        expect(newReaderRecord).to.equal(null);
       });
     });
   });
@@ -64,14 +75,24 @@ describe('/readers', () => {
     let readers;
 
     beforeEach(async () => {
+      await Reader.destroy({ where: {} });
+
       readers = await Promise.all([
         Reader.create({
           name: 'Elizabeth Bennet',
           email: 'future_ms_darcy@gmail.com',
-          password: '123456789'
+          password: 'notsureaboutanything',
         }),
-        Reader.create({ name: 'Arya Stark', email: 'vmorgul@me.com', password: '123456789' }),
-        Reader.create({ name: 'Lyra Belacqua', email: 'darknorth123@msn.org', password: '123456789' }),
+        Reader.create({
+          name: 'Arya Stark',
+          email: 'vmorgul@me.com',
+          password: 'wowpassword',
+        }),
+        Reader.create({
+          name: 'Lyra Belacqua',
+          email: 'darknorth123@msn.org',
+          password: 'theresaknifepwd',
+        }),
       ]);
     });
 
@@ -87,6 +108,7 @@ describe('/readers', () => {
 
           expect(reader.name).to.equal(expected.name);
           expect(reader.email).to.equal(expected.email);
+          expect(reader.password).to.equal(undefined);
         });
       });
     });
@@ -99,6 +121,7 @@ describe('/readers', () => {
         expect(response.status).to.equal(200);
         expect(response.body.name).to.equal(reader.name);
         expect(response.body.email).to.equal(reader.email);
+        expect(response.body.password).to.equal(undefined);
       });
 
       it('returns a 404 if the reader does not exist', async () => {
