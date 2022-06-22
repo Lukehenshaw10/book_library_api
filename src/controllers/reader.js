@@ -39,15 +39,33 @@ exports.readById = async (req, res) => {
     }
 };
 
+//Finds a specific reader from their id number and update their info
+
 exports.update = async (req, res) => {
     try { 
-        const { readerId } = req.params;
+        const { id } = req.params;
         const updateData = req.body;
-        const [ updatedRows ] = await Reader.update(updateData, { where: {readerId} });
+        const [ updatedRows ] = await Reader.update(updateData, { where: {id} });
     if(!updatedRows) {
-        res.status(404).json({error: "The reader could not be found" });
+        res.status(404).json({error: "The reader could not be found." });
     } else {
         res.status(200).send();
+    }
+    } catch (err) {
+        res.status(500).json(err);
+    }
+};
+
+//deletes reader at specified id 
+
+exports.destroy = async (req, res) => {
+    try { 
+        const { id } = req.params;
+        const  deletedRows  = await Reader.destroy({  where: { id } });
+    if(!deletedRows) {
+        res.status(404).json({error: "The reader could not be found." });
+    } else {
+        res.status(204).send();
     }
     } catch (err) {
         res.status(500).json(err);

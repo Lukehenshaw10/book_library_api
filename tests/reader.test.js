@@ -61,7 +61,7 @@ describe('/readers', () => {
     });
 
     describe('GET /readers/:id', () => {
-      it.only('gets readers record by id', async () => {
+      it('gets readers record by id', async () => {
         const reader = readers[0];
         const response = await request(app).get(`/readers/${reader.id}`);
 
@@ -70,7 +70,7 @@ describe('/readers', () => {
         expect(response.body.email).to.equal(reader.email);
       });
 
-      it.only('returns a 404 if the reader does not exist', async () => {
+      it('returns a 404 if the reader does not exist', async () => {
         const response = await request(app).get('/readers/12345');
 
         expect(response.status).to.equal(404);
@@ -103,7 +103,7 @@ describe('/readers', () => {
     });
 
     describe('DELETE /readers/:id', () => {
-      xit('deletes reader record by id', async () => {
+      it.only('deletes reader record by id', async () => {
         const reader = readers[0];
         const response = await request(app).delete(`/readers/${reader.id}`);
         const deletedReader = await Reader.findByPk(reader.id, { raw: true });
@@ -112,7 +112,7 @@ describe('/readers', () => {
         expect(deletedReader).to.equal(null);
       });
 
-      xit('returns a 404 if the reader does not exist', async () => {
+      it.only('returns a 404 if the reader does not exist', async () => {
         const response = await request(app).delete('/readers/12345');
         expect(response.status).to.equal(404);
         expect(response.body.error).to.equal('The reader could not be found.');
